@@ -1,0 +1,4 @@
+colorama
+ffmpeg-python
+psutil
+pymediainfo
