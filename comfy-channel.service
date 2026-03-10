@@ -1,0 +1,8 @@
+[Unit]
+Description=Comfy Channel Station Script
+[Service]
+WorkingDirectory="location of comfy-channel"
+# make directory for /dev/shm/hls/ before deploying
+ExecStart=/bin/python3 ./src/ComfyChannel.py -o "/dev/shm/hls/stream.m3u8"
+[Install]
+WantedBy=multi-user.target
