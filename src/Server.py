@@ -1,78 +1,93 @@
-# Auto-Channel configuration file
-SERV_OUTPUT_FPS = 30
-# Gets current time for upnext time calculation
-TIME_INDEX = None
+import ffmpeg
+import subprocess
+import Logger
+import Config as c
 
-W = 854
-H = 480
+SERVER_DEBUG = True
+devnull = subprocess.DEVNULL
 
-# Desired Resolution
+class Server:
 
-SERV_OUTPUT_WIDTH = 854
-SERV_OUTPUT_HEIGHT = 480
+    def __init__(self, output):
+        self.ff = ''
+        self.process = None
+        self.output = output
+        # Overlay graphics
+        self.overlay_file = ffmpeg.input(c.OVERLAY_FILE, loop=1, t=4)
+        if c.OVERLAY_FILE_OUTLINE:
+            self.overlay_file_outline = ffmpeg.input(c.OVERLAY_FILE_OUTLINE, loop=1, t=4)
 
-MAX_SAME_FILE_RETRIES = 3  # Number of times to attempt playing a file before giving up
-MAX_CONSECUTIVE_RETRIES = 3  # If several consecutive files fail, exit program
+    def start(self):
+        Logger.LOGGER.log(Logger.TYPE_INFO,
+                          f'Starting Server, output to: {self.output}')
 
-PLAYOUT_FILE = 'playout.ini'
-TRACKER_FILE = 'comfy-tracker.json'
-#OUTPUT_LOCATION = 'http://localhost:8098/stream.m3u8'
-LOOP = True
+        # Read from stdin (pipe)
+        in1 = ffmpeg.input('pipe:')
 
-SCHEDULER_UPNEXT_VIDEO_FOLDER = 'upnext/video'
-SCHEDULER_UPNEXT_AUDIO_FOLDER = 'upnext/audio'
-SCHEDULER_UPNEXT_WISDOM_FILE = 'upnext/wisdom.txt'
+        # Draw clock
+        v_live = ffmpeg.drawtext(
+            in1['v'], '%{localtime:%R}',
+            x=c.SERV_DRAWTEXT_X,
+            y=c.SERV_DRAWTEXT_Y,
+            escape_text=False,
+            shadowcolor=c.SERV_DRAWTEXT_SHADOW_COLOR,
+            shadowx=c.SERV_DRAWTEXT_SHADOW_X,
+            shadowy=c.SERV_DRAWTEXT_SHADOW_Y,
+            fontsize=c.SERV_DRAWTEXT_FONT_SIZE,
+            fontfile=c.SERV_DRAWTEXT_FONT_FILE,
+            fontcolor=c.SERV_DRAWTEXT_FONT_COLOR
+        )
 
-BUMP_FOLDER = 'bumpers'
+        # Overlay graphics
+        v_live = ffmpeg.overlay(v_live, self.overlay_file, x=c.OVERLAY_X, y=c.OVERLAY_Y)
+        if c.OVERLAY_FILE_OUTLINE:
+            v_live = ffmpeg.overlay(v_live, self.overlay_file_outline, x=c.OVERLAY_X, y=c.OVERLAY_Y)
 
-OVERLAY_FILE = 'upnext/comfychan.png'
-OVERLAY_FILE_OUTLINE = False
-OVERLAY_X = W - 50
-OVERLAY_Y = 0
+        a_live = in1['a']
 
-# When Walking the Directories, exclude some filetypes and directory names
-EXCLUDED_FILETYPES = ['srt', 'ass', 'idx', 'sub', 'py']
-EXCLUDED_DIRNAMES = ['Specials']
+        # Create black screen input
+        black = ffmpeg.input(
+            f'color=c=black:s={c.SERV_OUTPUT_WIDTH}x{c.SERV_OUTPUT_HEIGHT}:d=2:r={c.SERV_OUTPUT_FPS}', f='lavfi'
+        )
 
-# Settings that are the same between Serv and Client
-PIX_FMT = 'yuv420p'
-PRESET = 'ultrafast'
+        # Scale and match frame rate of live video to ensure xfade works
+        v_live_scaled = ffmpeg.filter(v_live, 'scale', c.SERV_OUTPUT_WIDTH, c.SERV_OUTPUT_HEIGHT)
+        v_live_scaled = ffmpeg.filter(v_live_scaled, 'fps', fps=c.SERV_OUTPUT_FPS)
 
-SERV_DRAWTEXT_X = 25
-SERV_DRAWTEXT_Y = 25
-SERV_DRAWTEXT_SHADOW_X = 2
-SERV_DRAWTEXT_SHADOW_Y = 2
-SERV_DRAWTEXT_SHADOW_COLOR = 'black'
-SERV_DRAWTEXT_FONT_FILE = 'fonts/hc-too5.ttf'
-SERV_DRAWTEXT_FONT_SIZE = 20
-SERV_DRAWTEXT_FONT_COLOR = 'white'
+        # Crossfade black screen to live video
+        v_final = ffmpeg.filter([black, v_live_scaled], 'xfade', transition='fade', duration=1, offset=1)
 
-SERV_OUTPUT_VCODEC = 'h264'
-SERV_OUTPUT_ASPECT = "%s:%s" % (W, H)
-SERV_OUTPUT_CRF = 18
-SERV_OUTPUT_ACODEC = 'aac'
-SERV_OUTPUT_FORMAT = 'flv'
+        # Combine audio with video (audio starts immediately)
+        joined = ffmpeg.concat(v_final, a_live, v=1, a=1)
 
-CLIENT_DRAWTEXT_X = 25
-CLIENT_DRAWTEXT_Y = 90
-CLIENT_DRAWTEXT_SHADOW_X = 2
-CLIENT_DRAWTEXT_SHADOW_Y = 2
-CLIENT_DRAWTEXT_SHADOW_COLOR = 'black'
-CLIENT_DRAWTEXT_FONT_FILE = 'fonts/hc-too5.ttf'
-CLIENT_DRAWTEXT_FONT_SIZE = 16
-CLIENT_DRAWTEXT_FONT_COLOR = 'white'
+        # OUTPUT: HLS (stream.m3u8 + rolling .ts segments)
+        self.ff = ffmpeg.output(
+            joined,
+            self.output,
+            format='hls',
+            hls_time='4',
+            hls_list_size='10',
+            hls_flags='delete_segments+append_list',
+            hls_segment_filename='/dev/shm/hls/stream%d.ts',
+            vcodec=c.SERV_OUTPUT_VCODEC,
+            pix_fmt=c.PIX_FMT,
+            aspect=c.SERV_OUTPUT_ASPECT,
+            crf=c.SERV_OUTPUT_CRF,
+            tune='zerolatency',
+            acodec=c.SERV_OUTPUT_ACODEC,
+            preset=c.PRESET
+        )
 
-CLIENT_VCODEC = 'h264'
-CLIENT_ASPECT = "%s:%s" % (W, H)
-CLIENT_FLAGS = '+cgop'
-CLIENT_G = 25
-CLIENT_ACODEC = 'aac'
-CLIENT_STRICT = 1
-CLIENT_AUDIO_BITRATE = '168k'
-CLIENT_AUDIO_RATE = 44100
-CLIENT_HLS_ALLOW_CACHE = 0
-CLIENT_HLS_TIME = 3
-CLIENT_HLS_LIST_SIZE = 5
-CLIENT_FORMAT = 'hls'
-CLIENT_FLEX = 3
-CLIENT_ENABLE_DEINTERLACE = True
+        # Build FFmpeg command
+        self.cmd = ['ffmpeg'] + ffmpeg.get_args(self.ff)
+
+        # Launch FFmpeg process
+        self.process = subprocess.Popen(
+            self.cmd,
+            stdin=subprocess.PIPE,
+            stdout=devnull,
+            stderr=(None if SERVER_DEBUG else devnull)
+        )
+
+        Logger.LOGGER.log(Logger.TYPE_INFO, 'Server Process Created')
+        return self.process
