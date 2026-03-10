@@ -418,7 +418,8 @@ class Server:
                                 crf=SERV_OUTPUT_CRF,
                                 tune='zerolatency',
                                 acodec=SERV_OUTPUT_ACODEC,
-                                preset=PRESET)
+                                preset=PRESET,
+                                force_key_frames='expr:gte(t,n_forced*4)')
         self.cmd = ['ffmpeg'] + ffmpeg.get_args(self.ff)
         self.process = subprocess.Popen(self.cmd, stdin=subprocess.PIPE, stdout=devnull, stderr=None if SERVER_DEBUG else devnull)
         LOGGER.log(TYPE_INFO, 'Server Process Created')
