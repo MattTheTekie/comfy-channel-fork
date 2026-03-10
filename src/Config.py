@@ -1,15 +1,12 @@
 # Auto-Channel configuration file
-SERV_OUTPUT_FPS = 30
+
 # Gets current time for upnext time calculation
 TIME_INDEX = None
 
-W = 854
-H = 480
-
 # Desired Resolution
 
-SERV_OUTPUT_WIDTH = 854
-SERV_OUTPUT_HEIGHT = 480
+W = 854 
+H = 480
 
 MAX_SAME_FILE_RETRIES = 3  # Number of times to attempt playing a file before giving up
 MAX_CONSECUTIVE_RETRIES = 3  # If several consecutive files fail, exit program
