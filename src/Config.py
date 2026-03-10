@@ -1,3 +1,4 @@
+SERV_OUTPUT_FPS = 30
 # Auto-Channel configuration file
 
 # Gets current time for upnext time calculation
