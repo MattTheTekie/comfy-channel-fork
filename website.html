@@ -12,51 +12,50 @@
         background-repeat: repeat;
         }
         .container {
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .player {
-        background-color: #000000;
-        width: 1280px;
-        height: 720px;
+          width: 640px;
+          height: 360px;
+        }
+        .player div {
+          display: inline-block;
+          position: relative;
+          z-index : 1;
+        }
+        .player div #my-video {
+        /* border: 1px red solid;  */
+        display: block; 
+        }
+        .player div + #my-video { 
+          position: absolute;
+          z-index: 0;
+          top: 97px;
+          right:110px; 
+        }
+        #my-video{
+          height:160px;
+          width:300px;
         }
     </style>
-    <link href="https://vjs.zencdn.net/7.5.4/video-js.css" rel="stylesheet">
+    <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet">
   </head>
   <body>
-    <button id="offTheater" type="button" style="position:absolute; top:0; right:0; display:none; z-index:99 !important" onclick="theaterModeOff()">X</button>
     <div class="container">
-        <div class="player">
-            <video id='stream' class='video-js vjs-default-skin vjs-big-play-centered player' controls autoplay width='1280' height='720' data-setup='{}'>
-                <source src='PUT STREAM HERE' type='application/x-mpegURL'>
-            </video>
-          <button type="button" onclick="theaterModeOn()">Theater Mode</button> 
+      <div class="player">
+        <div>
+          <div style="width: 640px; pointer-events: none;">
+              <img src="jiru_wide.png" alt="" style="width: 640px; pointer-events: none;"/>
+          </div>
+          <video id='my-video' class='video-js' controls autoplay preload='auto' width='640' data-setup='{"controlBar":{"fullscreenToggle":false}}' >
+            <source src='PUT STREAM HERE' type='application/x-mpegURL'>
+        </video>
         </div>
+      </div>
     </div>
-    <script src='https://vjs.zencdn.net/7.5.4/video.js'></script>
-    <script>
-      var options = {};
-      var player = videojs('stream', {});
-      function theaterModeOn() {
-        document.getElementById('stream').style.position = "absolute";
-        document.getElementById('stream').style.top = 0;
-        document.getElementById('stream').style.left = 0;
-        document.getElementById('stream').style.width = "100%";
-        document.getElementById('stream').style.maxWidth = "";
-        document.getElementById('stream').style.height = "100%";
-        document.getElementById('offTheater').style.display = "";
-      }
-      function theaterModeOff() {
-        document.getElementById('stream').style.position = "relative";
-        document.getElementById('stream').style.top = "";
-        document.getElementById('stream').style.left = "";
-        document.getElementById('stream').style.width = "1280px";
-        document.getElementById('stream').style.maxWidth = "100%";
-        document.getElementById('stream').style.height = "720px";
-        document.getElementById('offTheater').style.display = "none";
-      }
-    </script>
+    <script src='https://vjs.zencdn.net/7.7.6/video.js'></script>
   </body>
 </html>
