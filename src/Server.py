@@ -6,13 +6,15 @@ import Config as c
 SERVER_DEBUG = True
 devnull = subprocess.DEVNULL
 
+# The server consumes the stream from the client and outputs HLS (.m3u8 + .ts)
+# Also adds a clock overlay onto the video
+
 class Server:
 
     def __init__(self, output):
         self.ff = ''
         self.process = None
         self.output = output
-        # Overlay graphics
         self.overlay_file = ffmpeg.input(c.OVERLAY_FILE, loop=1, t=4)
         if c.OVERLAY_FILE_OUTLINE:
             self.overlay_file_outline = ffmpeg.input(c.OVERLAY_FILE_OUTLINE, loop=1, t=4)
@@ -25,7 +27,7 @@ class Server:
         in1 = ffmpeg.input('pipe:')
 
         # Draw clock
-        v_live = ffmpeg.drawtext(
+        v1 = ffmpeg.drawtext(
             in1['v'], '%{localtime:%R}',
             x=c.SERV_DRAWTEXT_X,
             y=c.SERV_DRAWTEXT_Y,
@@ -39,31 +41,19 @@ class Server:
         )
 
         # Overlay graphics
-        v_live = ffmpeg.overlay(v_live, self.overlay_file, x=c.OVERLAY_X, y=c.OVERLAY_Y)
+        v1 = ffmpeg.overlay(v1, self.overlay_file, x=c.OVERLAY_X, y=c.OVERLAY_Y)
         if c.OVERLAY_FILE_OUTLINE:
-            v_live = ffmpeg.overlay(v_live, self.overlay_file_outline, x=c.OVERLAY_X, y=c.OVERLAY_Y)
+            v1 = ffmpeg.overlay(v1, self.overlay_file_outline, x=c.OVERLAY_X, y=c.OVERLAY_Y)
 
-        a_live = in1['a']
+        a1 = in1['a']
 
-        # Create black screen input
-        black = ffmpeg.input(
-            f'color=c=black:s={c.SERV_OUTPUT_WIDTH}x{c.SERV_OUTPUT_HEIGHT}:d=2:r={c.SERV_OUTPUT_FPS}', f='lavfi'
-        )
-
-        # Scale and match frame rate of live video to ensure xfade works
-        v_live_scaled = ffmpeg.filter(v_live, 'scale', c.SERV_OUTPUT_WIDTH, c.SERV_OUTPUT_HEIGHT)
-        v_live_scaled = ffmpeg.filter(v_live_scaled, 'fps', fps=c.SERV_OUTPUT_FPS)
-
-        # Crossfade black screen to live video
-        v_final = ffmpeg.filter([black, v_live_scaled], 'xfade', transition='fade', duration=1, offset=1)
-
-        # Combine audio with video (audio starts immediately)
-        joined = ffmpeg.concat(v_final, a_live, v=1, a=1)
+        # Combine audio + video
+        joined = ffmpeg.concat(v1, a1, v=1, a=1)
 
         # OUTPUT: HLS (stream.m3u8 + rolling .ts segments)
         self.ff = ffmpeg.output(
             joined,
-            self.output,
+            self.output,  # stream.m3u8
             format='hls',
             hls_time='4',
             hls_list_size='10',
@@ -81,7 +71,7 @@ class Server:
         # Build FFmpeg command
         self.cmd = ['ffmpeg'] + ffmpeg.get_args(self.ff)
 
-        # Launch FFmpeg process
+        # Launch FFmpeg
         self.process = subprocess.Popen(
             self.cmd,
             stdin=subprocess.PIPE,
