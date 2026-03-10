@@ -1,6 +1,6 @@
 # Comfy Channel FORK (DRAGON)
 
-My personal fork of Comfy Channel with fixes for running in modern systems without issues alongside a complete fix for buffering issues from the previous code base.
+My personal fork of Comfy Channel with fixes for running in modern systems without issues alongside a complete fix for the gradual desyncing and the major buffering issues caused from the previous code base.
 
 ## ORIGINAL README
 
