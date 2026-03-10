@@ -30,7 +30,7 @@ MAX_CONSECUTIVE_RETRIES = 3
 
 PLAYOUT_FILE = 'playout.ini'
 TRACKER_FILE = 'comfy-tracker.json'
-# OUTPUT_LOCATION = 'http://localhost:8098/stream.m3u8'
+OUTPUT_LOCATION = '/dev/shm/hls/stream.m3u8'
 LOOP = True
 
 SCHEDULER_UPNEXT_VIDEO_FOLDER = 'upnext/video'
