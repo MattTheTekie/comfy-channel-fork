@@ -3,8 +3,13 @@ server {
     listen 8080;
     server_name _;
 
-    # Serve static files if they exist
     location / {
+            root /www;
+            index index.html index.htm;
+        }
+
+    # Serve static files if they exist
+    location /media {
         root /dev/shm/hls;
     }
 }
