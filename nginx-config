@@ -1,0 +1,10 @@
+server {
+# put desired port below
+    listen 8080;
+    server_name _;
+
+    # Serve static files if they exist
+    location / {
+        root /dev/shm/hls;
+    }
+}
