@@ -2,7 +2,7 @@
 
 My personal fork of Comfy Channel with fixes for running in modern systems without issues alongside a complete fix for the gradual desyncing and the major buffering issues caused from the previous code base.
 
-## ORIGINAL README
+## Original README [Code based on TheDerpySage's fork](https://github.com/TheDerpySage/comfy-channel)
 
 
 # Comfy Channel (UNICORN)
