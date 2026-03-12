@@ -4,8 +4,9 @@ server {
     server_name _;
 
     location / {
+# put path to www below
             root /www;
-            index index.html index.htm;
+            index index.html;
         }
 
     # Serve static files if they exist
