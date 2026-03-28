@@ -541,7 +541,9 @@ def main():
         scheduler = Scheduler(PLAYOUT_FILE)
         LOGGER.log(TYPE_INFO, f'Scheduler Created, PLAYOUT_FILE: {PLAYOUT_FILE}')
         LOGGER.log(TYPE_INFO, f'Schedule will end at: {TIME_INDEX.strftime("%H:%M")}')
-        for block in scheduler.blocklist:
+        blocks = scheduler.blocklist[:]
+        random.SystemRandom().shuffle(blocks)
+        for block in blocks:
             for x in range(len(block.playlist)):
                 ret = play_item(block.playlist[x], server)
                 if ret == 0:
